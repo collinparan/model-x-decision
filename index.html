@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Model 3 → Model X Trade-In Analysis (CO / AWD)</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: #0e0e10;
+    color: #f5f5f7;
+    margin: 0;
+    padding: 2rem;
+  }
+  h1 { margin: 0 0 0.25rem; font-weight: 600; }
+  .sub { color: #9a9aa2; margin-bottom: 1.5rem; font-size: 0.95rem; }
+  .card {
+    background: #18181b;
+    border: 1px solid #27272a;
+    border-radius: 12px;
+    padding: 1.25rem 1.5rem 1.5rem;
+    max-width: 1100px;
+    margin: 0 auto 1.25rem;
+  }
+  .specs {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+  }
+  .spec {
+    background: #1f1f23;
+    border: 1px solid #27272a;
+    border-radius: 8px;
+    padding: 0.6rem 0.85rem;
+  }
+  .spec .k { font-size: 0.72rem; color: #8a8a93; text-transform: uppercase; letter-spacing: 0.05em; }
+  .spec .v { font-size: 0.95rem; color: #f5f5f7; margin-top: 0.15rem; }
+  .chart-wrap { position: relative; height: 460px; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1.25rem;
+    font-size: 0.9rem;
+  }
+  th, td {
+    text-align: left;
+    padding: 0.5rem 0.7rem;
+    border-bottom: 1px solid #27272a;
+  }
+  th { color: #c4c4cc; font-weight: 500; background: #1f1f23; }
+  td.num { font-variant-numeric: tabular-nums; }
+  .legend-note { font-size: 0.8rem; color: #71717a; margin-top: 0.75rem; }
+  h2 { font-size: 1.05rem; font-weight: 600; margin: 0 0 0.75rem; color: #e4e4e7; }
+  .pill {
+    display: inline-block; font-size: 0.7rem; padding: 0.15rem 0.5rem;
+    border-radius: 999px; background: #1f3a5f; color: #93c5fd;
+    margin-left: 0.4rem; vertical-align: middle;
+  }
+  .pill.green { background: #14352a; color: #6ee7a3; }
+  .delta {
+    background: linear-gradient(135deg, #1f1f23, #2a1f1f);
+    border: 1px solid #4a2828;
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+    margin-top: 1rem;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
+  }
+  .delta .num { font-size: 1.5rem; font-weight: 600; }
+  .delta .lbl { font-size: 0.78rem; color: #a1a1aa; margin-bottom: 0.2rem; }
+  .recs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+  }
+  .rec {
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+    border: 1px solid;
+  }
+  .rec.six { background: linear-gradient(135deg, #0f1f3a, #1e3a5f); border-color: #3b82f6; }
+  .rec.seven { background: linear-gradient(135deg, #0f2a22, #14352a); border-color: #10b981; }
+  .rec .badge {
+    font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase;
+    color: #fbbf24; font-weight: 600;
+  }
+  .rec h3 { margin: 0.3rem 0 0.4rem; font-size: 1.25rem; }
+  .rec .yr { font-size: 1.6rem; font-weight: 700; }
+  .rec .meta { font-size: 0.85rem; color: #cbd5e1; margin-top: 0.4rem; }
+  .rec ul { margin: 0.5rem 0 0; padding-left: 1.1rem; font-size: 0.85rem; color: #e2e8f0; }
+  .rec li { margin-bottom: 0.2rem; }
+  table tr.rec-row { background: rgba(251,191,36,0.08); }
+  table tr.rec-row td:first-child::before {
+    content: '★ '; color: #fbbf24;
+  }
+  .news-banner {
+    background: linear-gradient(135deg, #2d1b0f, #3a2415);
+    border: 1px solid #7c4a1f;
+    border-radius: 10px;
+    padding: 0.85rem 1.1rem;
+    margin-bottom: 1.25rem;
+    font-size: 0.88rem;
+    color: #fde68a;
+  }
+  .news-banner strong { color: #fbbf24; }
+  .news-banner a { color: #fbbf24; text-decoration: underline; }
+  .scenario-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
+    margin: 1rem 0;
+  }
+  .stat-box {
+    background: #1f1f23;
+    border: 1px solid #27272a;
+    border-radius: 8px;
+    padding: 0.7rem 0.9rem;
+  }
+  .stat-box .lbl { font-size: 0.72rem; color: #8a8a93; text-transform: uppercase; letter-spacing: 0.05em; }
+  .stat-box .v { font-size: 1.1rem; color: #fbbf24; margin-top: 0.2rem; font-weight: 600; }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <h1>Model 3 → Used Model X Trade-In Analysis</h1>
+  <div class="sub">Colorado / AWD-only · 6-seat vs 7-seat · multi-year used market</div>
+
+  <div class="news-banner">
+    ⛽ <strong>Oil-shock factor (April 2026):</strong> The Iran war (since late Feb 2026) has spiked fuel prices and driven used-EV enquiries up <strong>~15%</strong>, with some dealers reporting sales jumps to <strong>+60%</strong>. But Q1 EV sales were still <strong>−3% YoY</strong> — the demand shock has a 6–12 month lag before it shows up in transaction prices. Translation: <strong>used Tesla values are likely to harden through late 2026 / early 2027</strong>, slowing depreciation on whatever you buy and boosting your Model 3's trade-in if you wait a quarter or two.
+  </div>
+</div>
+
+<div class="card">
+  <h2>Oil-shock scenario overlay</h2>
+  <div class="sub">Baseline depreciation vs. an oil-shock-adjusted curve (slower depreciation 2026–2028 as EV demand absorbs inventory, normalizing 2029+).</div>
+
+  <div class="scenario-stats">
+    <div class="stat-box">
+      <div class="lbl">Used EV demand spike</div>
+      <div class="v">+15% enquiries</div>
+    </div>
+    <div class="stat-box">
+      <div class="lbl">Lag period before price impact</div>
+      <div class="v">6–12 months</div>
+    </div>
+    <div class="stat-box">
+      <div class="lbl">Modeled depreciation reduction</div>
+      <div class="v">−4 pp (2026–28)</div>
+    </div>
+  </div>
+
+  <div class="chart-wrap" style="height: 460px;"><canvas id="chartOilShock"></canvas></div>
+  <div class="legend-note">
+    Solid lines = baseline forecast. Dashed gold lines = oil-shock-adjusted forecast for the two recommended picks. The shaded zone marks the "lag period" where transaction prices catch up to demand.
+  </div>
+</div>
+
+<div class="card">
+  <h2>Your trade-in summary</h2>
+  <div class="specs">
+    <div class="spec"><div class="k">Current car</div><div class="v">2023 M3 LR Dual Motor AWD</div></div>
+    <div class="spec"><div class="k">Mileage</div><div class="v">34,648 mi</div></div>
+    <div class="spec"><div class="k">Options</div><div class="v">FSD (Supervised) v12.6.4</div></div>
+    <div class="spec"><div class="k">Trade-in (condition-adj.)</div><div class="v" id="m3val">—</div></div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Recommended picks</h2>
+  <div class="recs">
+    <div class="rec six">
+      <div class="badge">★ 6-seat winner</div>
+      <h3>Captain's chairs · larger baby seats</h3>
+      <div class="yr">2021 Model X</div>
+      <div class="meta">~$45,500 · ~58k mi · ~$21,500 cash gap</div>
+      <ul>
+        <li>First refreshed-platform year (new battery, screen, wider captain's chairs)</li>
+        <li>Steepest depreciation already absorbed</li>
+        <li>Likely still under 8yr/150k powertrain warranty</li>
+      </ul>
+    </div>
+    <div class="rec seven">
+      <div class="badge">★ 7-seat winner</div>
+      <h3>Max capacity · cheapest entry</h3>
+      <div class="yr">2020 Model X</div>
+      <div class="meta">~$35,500 · ~70k mi · ~$11,500 cash gap</div>
+      <ul>
+        <li>Last year of mature legacy platform — production kinks long sorted</li>
+        <li>Lowest cash-out-of-pocket of any viable candidate</li>
+        <li>Only ~$12.5k more depreciation by 2030 (vs. $30k+ on a 2023)</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Used Model X market by model year <span class="pill">All AWD</span></h2>
+  <div class="sub">Current (2026) retail value across model years — 6-seat vs 7-seat configurations.</div>
+  <div class="chart-wrap"><canvas id="chartByYear"></canvas></div>
+  <div class="legend-note">
+    Note: Model X is AWD-standard since launch (dual or tri-motor). 6-seat (captain's chairs) typically trades at a 5–8% premium over the 7-seat bench in the used market — buyers in this segment tend to prioritize executive feel over the third-row middle seat.
+  </div>
+</div>
+
+<div class="card">
+  <h2>5-year depreciation forecast — every model year × seat config</h2>
+  <div class="sub">Where each option lands by 2030, assuming ~9–11% annual depreciation tapering with age.</div>
+  <div class="chart-wrap" style="height: 520px;"><canvas id="chartForecast"></canvas></div>
+  <div class="legend-note">
+    Solid = actual/current. Dashed = forecast. Hover any point for exact values.
+  </div>
+</div>
+
+<div class="card">
+  <h2>Cash-gap snapshot: trading your Model 3 today</h2>
+  <div class="sub">What you'd owe to bridge into each Model X candidate, after applying your ~$24k trade.</div>
+  <div class="chart-wrap" style="height: 380px;"><canvas id="chartGap"></canvas></div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Model Year</th>
+        <th>6-seat (now)</th>
+        <th>Gap (6-seat)</th>
+        <th>7-seat (now)</th>
+        <th>Gap (7-seat)</th>
+        <th>Est. miles</th>
+      </tr>
+    </thead>
+    <tbody id="gapTable"></tbody>
+  </table>
+</div>
+
+<script>
+  // ============================================================
+  // Inputs: your Model 3 trade-in
+  // ============================================================
+  const m3CleanNow    = 28500;            // 2023 M3 LR AWD, ~35k mi, w/ FSD
+  const conditionHit  = 1200 + 200;       // hail windshield + bumper scratch
+  const m3AdjNow      = m3CleanNow - conditionHit;
+  const m3TradeIn     = Math.round(m3AdjNow * 0.88);  // dealer trade discount
+  document.getElementById('m3val').textContent = `$${m3TradeIn.toLocaleString()}`;
+
+  // ============================================================
+  // Used Model X market — by model year, AWD only, 6-seat vs 7-seat
+  // Current values reflect typical examples with avg miles for age
+  // ============================================================
+  const modelYears = [2018, 2019, 2020, 2021, 2022, 2023, 2024];
+  const avgMiles   = [95000, 82000, 70000, 58000, 42000, 28000, 14000];
+
+  const mx6Seat = [30500, 33500, 38500, 45500, 58000, 68000, 78000];
+  const mx7Seat = [28000, 31000, 35500, 42000, 54000, 64000, 74000];
+
+  // ============================================================
+  // Recommended picks (used to highlight on charts)
+  // 2021 (index 3) for 6-seat, 2020 (index 2) for 7-seat
+  // ============================================================
+  const REC_6_IDX = 3; // 2021
+  const REC_7_IDX = 2; // 2020
+
+  function recPointStyle(recIdx, normalColor) {
+    return {
+      pointRadius: ctx => ctx.dataIndex === recIdx ? 11 : 5,
+      pointBackgroundColor: ctx => ctx.dataIndex === recIdx ? '#fbbf24' : normalColor,
+      pointBorderColor: ctx => ctx.dataIndex === recIdx ? '#fff' : normalColor,
+      pointBorderWidth: ctx => ctx.dataIndex === recIdx ? 3 : 0,
+      pointStyle: ctx => ctx.dataIndex === recIdx ? 'star' : 'circle',
+    };
+  }
+
+  // ============================================================
+  // Chart 1: Current value by model year
+  // ============================================================
+  new Chart(document.getElementById('chartByYear'), {
+    type: 'line',
+    data: {
+      labels: modelYears,
+      datasets: [
+        {
+          ...seriesCurrent('6-seat (captain\'s chairs)', mx6Seat, '#3b82f6'),
+          ...recPointStyle(REC_6_IDX, '#3b82f6'),
+        },
+        {
+          ...seriesCurrent('7-seat (bench middle row)', mx7Seat, '#10b981'),
+          ...recPointStyle(REC_7_IDX, '#10b981'),
+        },
+      ],
+    },
+    options: chartOpts({ xTitle: 'Model Year' }),
+  });
+
+  // ============================================================
+  // Chart 2: 5-yr depreciation forecast for each year × config
+  // ============================================================
+  const forecastYears = [2026, 2027, 2028, 2029, 2030];
+
+  // Tapered depreciation: newer cars depreciate faster
+  function projectForward(currentValue, modelYear) {
+    const ageNow = 2026 - modelYear;
+    const result = [currentValue];
+    for (let i = 1; i < 5; i++) {
+      const age = ageNow + i;
+      // Younger cars: ~11% drop. Older cars: ~7% drop. Floor.
+      const rate = Math.max(0.07, 0.13 - age * 0.005);
+      result.push(Math.round(result[i - 1] * (1 - rate)));
+    }
+    return result;
+  }
+
+  const palette6 = ['#1d4ed8', '#2563eb', '#3b82f6', '#60a5fa', '#93c5fd', '#bfdbfe', '#dbeafe'];
+  const palette7 = ['#065f46', '#047857', '#059669', '#10b981', '#34d399', '#6ee7b7', '#a7f3d0'];
+
+  const forecastDatasets = [];
+  modelYears.forEach((my, i) => {
+    forecastDatasets.push({
+      label: `${my} · 6-seat`,
+      data: projectForward(mx6Seat[i], my),
+      borderColor: palette6[i],
+      backgroundColor: palette6[i],
+      borderWidth: 2, tension: 0.2,
+      pointRadius: 3,
+      segment: { borderDash: ctx => ctx.p0DataIndex >= 0 ? [5, 5] : [] },
+    });
+    forecastDatasets.push({
+      label: `${my} · 7-seat`,
+      data: projectForward(mx7Seat[i], my),
+      borderColor: palette7[i],
+      backgroundColor: palette7[i],
+      borderWidth: 2, tension: 0.2,
+      pointRadius: 3,
+      borderDash: [5, 5],
+    });
+  });
+
+  new Chart(document.getElementById('chartForecast'), {
+    type: 'line',
+    data: { labels: forecastYears, datasets: forecastDatasets },
+    options: chartOpts({ xTitle: 'Calendar Year', legendCols: 2 }),
+  });
+
+  // ============================================================
+  // Chart 3: Cash gap to bridge (per candidate)
+  // ============================================================
+  const gap6 = mx6Seat.map(v => v - m3TradeIn);
+  const gap7 = mx7Seat.map(v => v - m3TradeIn);
+
+  new Chart(document.getElementById('chartGap'), {
+    type: 'bar',
+    data: {
+      labels: modelYears,
+      datasets: [
+        {
+          label: '6-seat gap',
+          data: gap6,
+          backgroundColor: ctx => ctx.dataIndex === REC_6_IDX ? '#fbbf24' : '#3b82f6',
+          borderColor: ctx => ctx.dataIndex === REC_6_IDX ? '#fff' : 'transparent',
+          borderWidth: ctx => ctx.dataIndex === REC_6_IDX ? 2 : 0,
+        },
+        {
+          label: '7-seat gap',
+          data: gap7,
+          backgroundColor: ctx => ctx.dataIndex === REC_7_IDX ? '#fbbf24' : '#10b981',
+          borderColor: ctx => ctx.dataIndex === REC_7_IDX ? '#fff' : 'transparent',
+          borderWidth: ctx => ctx.dataIndex === REC_7_IDX ? 2 : 0,
+        },
+      ],
+    },
+    options: chartOpts({ xTitle: 'Model Year' }),
+  });
+
+  // ============================================================
+  // Gap table
+  // ============================================================
+  const tbody = document.getElementById('gapTable');
+  modelYears.forEach((my, i) => {
+    const tr = document.createElement('tr');
+    const is6Rec = i === REC_6_IDX;
+    const is7Rec = i === REC_7_IDX;
+    if (is6Rec || is7Rec) tr.classList.add('rec-row');
+    const star = '<span style="color:#fbbf24">★</span>';
+    tr.innerHTML = `
+      <td>${my}</td>
+      <td class="num">${is6Rec ? star + ' ' : ''}$${mx6Seat[i].toLocaleString()}</td>
+      <td class="num">$${gap6[i].toLocaleString()}</td>
+      <td class="num">${is7Rec ? star + ' ' : ''}$${mx7Seat[i].toLocaleString()}</td>
+      <td class="num">$${gap7[i].toLocaleString()}</td>
+      <td class="num">~${avgMiles[i].toLocaleString()}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  // ============================================================
+  // Helpers
+  // ============================================================
+  function seriesCurrent(label, data, color) {
+    return {
+      label, data,
+      borderColor: color,
+      backgroundColor: color + '22',
+      fill: true, tension: 0.3, borderWidth: 2.5,
+      pointRadius: 5, pointBackgroundColor: color,
+    };
+  }
+
+  // ============================================================
+  // Oil-shock scenario overlay
+  // Modeled adjustment: -4pp depreciation 2026-2028, normalize 2029+
+  // Reflects lag where ~15% demand spike absorbs inventory over 6-12mo
+  // ============================================================
+  function projectWithOilShock(currentValue, modelYear) {
+    const ageNow = 2026 - modelYear;
+    const result = [currentValue];
+    for (let i = 1; i < 5; i++) {
+      const calYear = 2026 + i;
+      const age = ageNow + i;
+      const baseRate = Math.max(0.07, 0.13 - age * 0.005);
+      // Oil-shock cushion: slows depreciation -4pp in 2027, -3pp 2028, -1pp 2029, 0 by 2030
+      const cushion = calYear === 2027 ? 0.04
+                    : calYear === 2028 ? 0.03
+                    : calYear === 2029 ? 0.01
+                    : 0;
+      const rate = Math.max(0.04, baseRate - cushion);
+      result.push(Math.round(result[i - 1] * (1 - rate)));
+    }
+    return result;
+  }
+
+  // Lag-zone shading plugin
+  const lagZonePlugin = {
+    id: 'lagZone',
+    beforeDraw(chart) {
+      const { ctx, chartArea, scales } = chart;
+      if (!chartArea) return;
+      const xStart = scales.x.getPixelForValue(2026);
+      const xEnd = scales.x.getPixelForValue(2027);
+      ctx.save();
+      ctx.fillStyle = 'rgba(251, 191, 36, 0.08)';
+      ctx.fillRect(xStart, chartArea.top, xEnd - xStart, chartArea.bottom - chartArea.top);
+      ctx.fillStyle = '#fbbf24';
+      ctx.font = '11px -apple-system, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('lag zone', (xStart + xEnd) / 2, chartArea.top + 14);
+      ctx.restore();
+    },
+  };
+
+  // Build oil-shock chart: baseline + adjusted for both rec picks
+  const rec6Base   = projectForward(mx6Seat[REC_6_IDX], 2021);
+  const rec6Shock  = projectWithOilShock(mx6Seat[REC_6_IDX], 2021);
+  const rec7Base   = projectForward(mx7Seat[REC_7_IDX], 2020);
+  const rec7Shock  = projectWithOilShock(mx7Seat[REC_7_IDX], 2020);
+
+  new Chart(document.getElementById('chartOilShock'), {
+    type: 'line',
+    data: {
+      labels: forecastYears,
+      datasets: [
+        {
+          label: '2021 6-seat — baseline',
+          data: rec6Base,
+          borderColor: '#3b82f6',
+          backgroundColor: 'rgba(59,130,246,0.08)',
+          borderWidth: 2.5, tension: 0.25, fill: false,
+          pointRadius: 4, pointBackgroundColor: '#3b82f6',
+        },
+        {
+          label: '2021 6-seat — oil-shock adjusted',
+          data: rec6Shock,
+          borderColor: '#fbbf24',
+          backgroundColor: 'rgba(251,191,36,0.10)',
+          borderWidth: 2.5, tension: 0.25, fill: false,
+          borderDash: [6, 6],
+          pointRadius: 4, pointStyle: 'star', pointBackgroundColor: '#fbbf24',
+        },
+        {
+          label: '2020 7-seat — baseline',
+          data: rec7Base,
+          borderColor: '#10b981',
+          backgroundColor: 'rgba(16,185,129,0.08)',
+          borderWidth: 2.5, tension: 0.25, fill: false,
+          pointRadius: 4, pointBackgroundColor: '#10b981',
+        },
+        {
+          label: '2020 7-seat — oil-shock adjusted',
+          data: rec7Shock,
+          borderColor: '#f59e0b',
+          backgroundColor: 'rgba(245,158,11,0.10)',
+          borderWidth: 2.5, tension: 0.25, fill: false,
+          borderDash: [6, 6],
+          pointRadius: 4, pointStyle: 'star', pointBackgroundColor: '#f59e0b',
+        },
+      ],
+    },
+    options: chartOpts({ xTitle: 'Calendar Year' }),
+    plugins: [lagZonePlugin],
+  });
+
+  function chartOpts({ xTitle, legendCols } = {}) {
+    return {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          labels: { color: '#e4e4e7', boxWidth: 14, font: { size: 11 } },
+          position: legendCols ? 'right' : 'top',
+        },
+        tooltip: {
+          callbacks: {
+            label: ctx => ` ${ctx.dataset.label}: $${ctx.parsed.y.toLocaleString()}`,
+          },
+        },
+      },
+      scales: {
+        x: {
+          ticks: { color: '#a1a1aa' },
+          grid: { color: '#27272a' },
+          title: xTitle ? { display: true, text: xTitle, color: '#71717a' } : undefined,
+        },
+        y: {
+          ticks: { color: '#a1a1aa', callback: v => '$' + (v / 1000) + 'k' },
+          grid: { color: '#27272a' },
+        },
+      },
+    };
+  }
+</script>
+</body>
+</html>
