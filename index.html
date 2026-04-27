@@ -150,9 +150,76 @@
     font-size: 0.9rem; color: #d1fae5;
   }
   .verdict-callout strong { color: #6ee7a3; }
+  .bluf {
+    background: linear-gradient(135deg, #1a1f2e, #1e293b);
+    border: 2px solid #fbbf24;
+    border-radius: 14px;
+    padding: 1.5rem 1.75rem;
+  }
+  .bluf .label {
+    font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase;
+    color: #fbbf24; font-weight: 700; margin-bottom: 0.4rem;
+  }
+  .bluf h2 {
+    margin: 0 0 1rem; font-size: 1.5rem; color: #f5f5f7;
+  }
+  .bluf-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+  .bluf-rec {
+    background: rgba(0,0,0,0.25);
+    border-left: 3px solid;
+    border-radius: 6px;
+    padding: 0.85rem 1rem;
+  }
+  .bluf-rec.seven { border-color: #10b981; }
+  .bluf-rec.six { border-color: #3b82f6; }
+  .bluf-rec .pick { font-size: 1.2rem; font-weight: 700; margin: 0.15rem 0; color: #f5f5f7; }
+  .bluf-rec .premium { font-size: 0.85rem; color: #cbd5e1; }
+  .bluf-rec .verdict-tag {
+    display: inline-block; font-size: 0.7rem;
+    padding: 0.15rem 0.5rem; border-radius: 999px;
+    margin-top: 0.4rem; font-weight: 600;
+  }
+  .bluf-actions {
+    margin: 0; padding-left: 1.2rem; font-size: 0.92rem; color: #e2e8f0;
+  }
+  .bluf-actions li { margin-bottom: 0.35rem; }
+  .bluf-actions strong { color: #fbbf24; }
 </style>
 </head>
 <body>
+
+<div class="card bluf">
+  <div class="label">★ Bottom Line Up Front</div>
+  <h2>Lean toward a 2020 Model X 7-seater — or wait until Q4 2026.</h2>
+
+  <div class="bluf-grid">
+    <div class="bluf-rec seven">
+      <div style="font-size:0.78rem;color:#6ee7a3;font-weight:600;">7-SEAT PICK</div>
+      <div class="pick">2020 Model X · 7-seat</div>
+      <div class="premium">~$11.5K cash gap · ~$17K total 5-yr premium</div>
+      <span class="verdict-tag" style="background:#3a2415;color:#fcd34d;border:1px solid #ca8a04;">Borderline — defensible</span>
+    </div>
+    <div class="bluf-rec six">
+      <div style="font-size:0.78rem;color:#93c5fd;font-weight:600;">6-SEAT PICK (IF CAPTAIN'S CHAIRS NEEDED)</div>
+      <div class="pick">2018 Model X · 6-seat</div>
+      <div class="premium">~$6.5K cash gap · ~$13K total 5-yr premium</div>
+      <span class="verdict-tag" style="background:#3a2415;color:#fcd34d;border:1px solid #ca8a04;">Cheapest 6-seat option</span>
+    </div>
+  </div>
+
+  <ul class="bluf-actions">
+    <li><strong>Nothing passes the strict $10K bar</strong> once interest + insurance + extra dep stack up. Closest is 2018 7-seat at ~$10K — but 95k miles + legacy MCU is a reliability gamble.</li>
+    <li><strong>2020 7-seat is the most defensible pick:</strong> mature legacy platform, lowest cash-out for a viable family hauler, and ~$17K 5-yr premium is justifiable if third-row capacity is a real need.</li>
+    <li><strong>Skip 2021+ entirely.</strong> Every refreshed-platform option blows past the $20K mark — you're paying for newness, not utility.</li>
+    <li><strong>Wait one quarter if you can.</strong> Iran-war oil shock → +15% used-EV demand with a 6–12 mo lag → your Model 3's trade-in value should harden ~$1–2K by late 2026.</li>
+    <li><strong>Before trade:</strong> file the hail windshield under comprehensive (eliminates the $1,200 condition deduction) and buff the bumper yourself.</li>
+  </ul>
+</div>
 
 <div class="card">
   <h1>Model 3 → Used Model X Trade-In Analysis</h1>
@@ -687,7 +754,7 @@
         const y10k = scales.y.getPixelForValue(10000);
         const y20k = scales.y.getPixelForValue(20000);
         ctx.save();
-        // $10K line — wife's threshold
+        // $10K threshold
         ctx.setLineDash([5, 5]);
         ctx.strokeStyle = '#6ee7a3';
         ctx.lineWidth = 1.5;
@@ -697,7 +764,7 @@
         ctx.stroke();
         ctx.fillStyle = '#6ee7a3';
         ctx.font = 'bold 11px -apple-system';
-        ctx.fillText('$10K — wife\'s threshold', chartArea.left + 8, y10k - 4);
+        ctx.fillText('$10K threshold', chartArea.left + 8, y10k - 4);
         // $20K line
         ctx.strokeStyle = '#fcd34d';
         ctx.beginPath();
@@ -733,7 +800,7 @@
   const best6 = tcoRecords.filter(r => r.config === '6-seat').sort((a, b) => a.total - b.total)[0];
   const best7 = tcoRecords.filter(r => r.config === '7-seat').sort((a, b) => a.total - b.total)[0];
   document.getElementById('verdictCallout').innerHTML = `
-    <strong>Lowest-premium picks under the wife's logic:</strong>
+    <strong>Lowest-premium picks under the $10K threshold logic:</strong>
     7-seat → <strong>${best7.year}</strong> at <strong>$${best7.total.toLocaleString()}</strong> over 5 years ·
     6-seat → <strong>${best6.year}</strong> at <strong>$${best6.total.toLocaleString()}</strong>.
     Anything 2022+ blows past the $20K mark — you're paying for newness, not utility.
