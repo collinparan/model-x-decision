@@ -350,6 +350,64 @@
 </div>
 
 <div class="card">
+  <h2>Timing strategy — sell and buy together, or decouple?</h2>
+  <div class="sub">Net out-of-pocket under four timing strategies for the 2020 7-seat ($35.5K). Anchored to Colorado's sales-tax rule: trade-in credit (~8%) <em>only</em> applies if it's part of the same transaction.</div>
+
+  <div class="chart-wrap" style="height: 400px;"><canvas id="chartTiming"></canvas></div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Strategy</th>
+        <th>M3 disposition</th>
+        <th>Sales tax</th>
+        <th>Carry costs</th>
+        <th>Net out-of-pocket</th>
+        <th>Verdict</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr style="background: rgba(110,231,163,0.08);">
+        <td><strong>A. Trade + buy together (today)</strong></td>
+        <td>$24K trade-in</td>
+        <td class="num">$920 (on gap only)</td>
+        <td class="num">$0</td>
+        <td class="num" style="color:#6ee7a3;font-weight:700;">$12,420</td>
+        <td style="color:#6ee7a3;">★ Recommended</td>
+      </tr>
+      <tr>
+        <td>B. Sell M3 privately ($26K), buy MX same week</td>
+        <td>$26K private sale</td>
+        <td class="num">$2,840 (full price)</td>
+        <td class="num">$0</td>
+        <td class="num">$12,340</td>
+        <td style="color:#fcd34d;">~Wash; risky</td>
+      </tr>
+      <tr>
+        <td>C. Buy MX now, sell M3 privately in Q4 2026</td>
+        <td>$27K private (oil-shock peak)</td>
+        <td class="num">$2,840</td>
+        <td class="num">~$2,500 (ins. + interest)</td>
+        <td class="num" style="color:#fca5a5;">$13,000+</td>
+        <td style="color:#fca5a5;">Carrying costs eat gains</td>
+      </tr>
+      <tr>
+        <td>D. Wait — do the swap together in Q4 2026</td>
+        <td>$22.5K trade-in (later)</td>
+        <td class="num">$1,120</td>
+        <td class="num">$0</td>
+        <td class="num" style="color:#fca5a5;">$15,100</td>
+        <td style="color:#fca5a5;">Worst — MX prices firming</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="verdict-callout" style="background:#14352a;border-color:#16a34a;margin-top:1rem;">
+    <strong>Bottom line:</strong> The Colorado trade-in tax credit is structured to penalize decoupling. Same-transaction trade wins by ~$580–2,700 vs. any other timing strategy. Decoupling is only worth the hassle if you have a buyer lined up at <strong>$27K+ before</strong> visiting the MX dealer.
+  </div>
+</div>
+
+<div class="card">
   <h2>Cash-gap snapshot: trading your Model 3 today</h2>
   <div class="sub">What you'd owe to bridge into each Model X candidate, after applying your ~$24k trade.</div>
   <div class="chart-wrap" style="height: 380px;"><canvas id="chartGap"></canvas></div>
@@ -806,6 +864,70 @@
     Anything 2022+ blows past the $20K mark — you're paying for newness, not utility.
   `;
 
+  // ============================================================
+  // Timing strategy chart
+  // ============================================================
+  const timingScenarios = [
+    { label: 'A. Trade + buy together', cash: 11500, tax: 920, carry: 0, color: '#16a34a' },
+    { label: 'B. Private sale + same-week buy', cash: 9500, tax: 2840, carry: 0, color: '#ca8a04' },
+    { label: 'C. Buy now, sell private Q4', cash: 8500, tax: 2840, carry: 1650, color: '#dc2626' },
+    { label: 'D. Wait — both in Q4', cash: 14000, tax: 1120, carry: 0, color: '#dc2626' },
+  ];
+
+  new Chart(document.getElementById('chartTiming'), {
+    type: 'bar',
+    data: {
+      labels: timingScenarios.map(s => s.label),
+      datasets: [
+        {
+          label: 'Cash gap / net cash out',
+          data: timingScenarios.map(s => s.cash),
+          backgroundColor: '#3b82f6',
+        },
+        {
+          label: 'Sales tax (CO ~8%)',
+          data: timingScenarios.map(s => s.tax),
+          backgroundColor: '#8b5cf6',
+        },
+        {
+          label: 'Carry costs (double ins. + extra interest)',
+          data: timingScenarios.map(s => s.carry),
+          backgroundColor: '#ec4899',
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { labels: { color: '#e4e4e7' } },
+        tooltip: {
+          callbacks: {
+            label: ctx => ` ${ctx.dataset.label}: $${ctx.parsed.y.toLocaleString()}`,
+            footer: items => {
+              const idx = items[0].dataIndex;
+              const total = timingScenarios[idx].cash + timingScenarios[idx].tax + timingScenarios[idx].carry;
+              return `Total out-of-pocket: $${total.toLocaleString()}`;
+            },
+          },
+        },
+      },
+      scales: {
+        x: {
+          stacked: true,
+          ticks: { color: '#a1a1aa', maxRotation: 30, minRotation: 0, font: { size: 10 } },
+          grid: { color: '#27272a' },
+        },
+        y: {
+          stacked: true,
+          ticks: { color: '#a1a1aa', callback: v => '$' + (v / 1000) + 'k' },
+          grid: { color: '#27272a' },
+          title: { display: true, text: 'Net out-of-pocket ($)', color: '#71717a' },
+        },
+      },
+    },
+  });
+
   function chartOpts({ xTitle, legendCols } = {}) {
     return {
       responsive: true,
@@ -835,5 +957,37 @@
     };
   }
 </script>
+
+<div class="card" style="font-size: 0.85rem;">
+  <h2>Sources</h2>
+  <div class="sub">News and tax-rule references used in this analysis.</div>
+
+  <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 1.25rem;">
+    <div>
+      <div style="color:#fbbf24; font-weight:600; margin-bottom:0.5rem;">⛽ Oil shock / EV demand impact</div>
+      <ul style="margin:0; padding-left:1.1rem; color:#cbd5e1; line-height:1.7;">
+        <li><a href="https://www.cnbc.com/2026/04/02/evs-autos-energy-oil-iran-war-electric-transport-fossil-fuels.html" target="_blank" style="color:#93c5fd;">CNBC — EV demand gets a boost from Iran war</a></li>
+        <li><a href="https://cleantechnica.com/2026/03/28/the-iran-wars-impact-on-global-auto-sales/" target="_blank" style="color:#93c5fd;">CleanTechnica — Iran War's Impact On Global Auto Sales</a></li>
+        <li><a href="https://www.pbs.org/newshour/nation/should-drivers-turn-to-evs-as-the-war-spikes-gas-prices-heres-what-to-know" target="_blank" style="color:#93c5fd;">PBS News — Should drivers turn to EVs as gas prices spike</a></li>
+        <li><a href="https://brumble.co.uk/guides/used-car-values-increasing" target="_blank" style="color:#93c5fd;">Brumble — Why Are Used Cars So Expensive (April 2026)</a></li>
+        <li><a href="https://autovista24.autovistagroup.com/news/market-conditions-impact-2026-ev-forecast/" target="_blank" style="color:#93c5fd;">Autovista24 — Market conditions impact 2026 EV forecast</a></li>
+      </ul>
+    </div>
+    <div>
+      <div style="color:#fbbf24; font-weight:600; margin-bottom:0.5rem;">🏛 Colorado trade-in / sales tax</div>
+      <ul style="margin:0; padding-left:1.1rem; color:#cbd5e1; line-height:1.7;">
+        <li><a href="https://www.westernslopeford.com/colorado-trade-in-tax-credit.htm" target="_blank" style="color:#93c5fd;">Western Slope Ford — CO Trade-In Tax Credit</a></li>
+        <li><a href="https://www.westernslopetoyota.com/colorado-trade-in-tax-credit/" target="_blank" style="color:#93c5fd;">Western Slope Toyota — Trade-In Tax Credit</a></li>
+        <li><a href="https://www.salestaxhandbook.com/colorado/sales-tax-vehicles" target="_blank" style="color:#93c5fd;">SalesTaxHandbook — Colorado vehicle sales tax</a></li>
+        <li><a href="https://www.denvergov.org/content/dam/denvergov/Portals/571/documents/TaxGuide/TaxGuideTopic73_TradeIns.pdf" target="_blank" style="color:#93c5fd;">Denver Tax Guide Topic 78 — Trade-Ins (PDF)</a></li>
+        <li><a href="https://tax.colorado.gov/motor-vehicle" target="_blank" style="color:#93c5fd;">CO Dept. of Revenue — Motor Vehicle</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="legend-note" style="margin-top:1rem;">
+    Used vehicle pricing benchmarked against Kelley Blue Book and Edmunds aggregate data; Tesla MSRP history per Tesla price-tracker archives. Forecast assumptions are illustrative — your dealer's actual offers will vary.
+  </div>
+</div>
+
 </body>
 </html>
