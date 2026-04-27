@@ -121,6 +121,35 @@
   }
   .stat-box .lbl { font-size: 0.72rem; color: #8a8a93; text-transform: uppercase; letter-spacing: 0.05em; }
   .stat-box .v { font-size: 1.1rem; color: #fbbf24; margin-top: 0.2rem; font-weight: 600; }
+  .tco-assumptions {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.6rem;
+    margin: 0.75rem 0 1.25rem;
+    font-size: 0.8rem;
+  }
+  .tco-assumptions .item {
+    background: #1f1f23; border: 1px solid #27272a;
+    border-radius: 6px; padding: 0.5rem 0.75rem;
+  }
+  .tco-assumptions .item .k { color: #71717a; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em; }
+  .tco-assumptions .item .v { color: #e4e4e7; margin-top: 0.15rem; font-weight: 500; }
+  .verdict-legend {
+    display: flex; gap: 0.5rem; margin-top: 0.75rem;
+    flex-wrap: wrap; font-size: 0.78rem;
+  }
+  .verdict-legend .band {
+    padding: 0.25rem 0.6rem; border-radius: 999px; font-weight: 500;
+  }
+  .band.green { background: #14352a; color: #6ee7a3; border: 1px solid #16a34a; }
+  .band.yellow { background: #3a2415; color: #fcd34d; border: 1px solid #ca8a04; }
+  .band.red { background: #2a1f1f; color: #fca5a5; border: 1px solid #dc2626; }
+  .verdict-callout {
+    background: #14352a; border: 1px solid #16a34a;
+    border-radius: 10px; padding: 0.85rem 1.1rem; margin-top: 1rem;
+    font-size: 0.9rem; color: #d1fae5;
+  }
+  .verdict-callout strong { color: #6ee7a3; }
 </style>
 </head>
 <body>
@@ -213,6 +242,44 @@
   <div class="legend-note">
     Solid = actual/current. Dashed = forecast. Hover any point for exact values.
   </div>
+</div>
+
+<div class="card">
+  <h2>5-year Total Cost of Ownership — switch premium vs. keeping the Model 3</h2>
+  <div class="sub">The real cost of switching, factoring loan interest on the cash gap and Colorado Tesla insurance differential. Anchored to the "$10K threshold" — what it has to be worth to make sense.</div>
+
+  <div class="tco-assumptions">
+    <div class="item"><div class="k">Loan APR (used)</div><div class="v">7.5% / 60 mo</div></div>
+    <div class="item"><div class="k">M3 insurance (CO)</div><div class="v">~$2,300/yr</div></div>
+    <div class="item"><div class="k">MX insurance (CO)</div><div class="v">~$3,500/yr</div></div>
+    <div class="item"><div class="k">Insurance delta (5 yr)</div><div class="v">$6,000</div></div>
+  </div>
+
+  <div class="chart-wrap" style="height: 480px;"><canvas id="chartTCO"></canvas></div>
+
+  <div class="verdict-legend">
+    <span class="band green">Worth it (&lt; $10K premium)</span>
+    <span class="band yellow">Borderline ($10–20K)</span>
+    <span class="band red">Hard to justify (&gt; $20K)</span>
+  </div>
+
+  <div class="verdict-callout" id="verdictCallout">—</div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Year</th>
+        <th>Config</th>
+        <th>Cash gap</th>
+        <th>5-yr interest</th>
+        <th>Ins. delta</th>
+        <th>Extra dep.</th>
+        <th>Total premium</th>
+        <th>Verdict</th>
+      </tr>
+    </thead>
+    <tbody id="tcoTable"></tbody>
+  </table>
 </div>
 
 <div class="card">
@@ -498,6 +565,179 @@
     options: chartOpts({ xTitle: 'Calendar Year' }),
     plugins: [lagZonePlugin],
   });
+
+  // ============================================================
+  // 5-Year Total Cost of Ownership analysis
+  // Switch premium = cash gap + interest on financed gap +
+  //                  insurance delta + extra depreciation vs M3
+  // ============================================================
+  const APR = 0.075;
+  const TERM_MO = 60;
+  const INS_DELTA_YR = 1200; // MX premium over M3 in CO
+  const INS_DELTA_5YR = INS_DELTA_YR * 5;
+
+  // Simple amortized total interest on a financed amount
+  function totalInterest(principal, apr, termMo) {
+    const r = apr / 12;
+    const monthly = (principal * r) / (1 - Math.pow(1 + r, -termMo));
+    return Math.round(monthly * termMo - principal);
+  }
+
+  // Project M3 5-yr depreciation as our baseline
+  // 2026 trade-in $24,024 → ~$15,500 by 2030 (per earlier forecast)
+  const m3DepBaseline = 24024 - 15500;
+
+  // For each MX option, compute 5-yr depreciation
+  function mxDep5yr(currentValue, modelYear) {
+    const proj = projectForward(currentValue, modelYear);
+    return currentValue - proj[proj.length - 1];
+  }
+
+  function buildTCO(currentValue, modelYear) {
+    const cashGap = currentValue - m3TradeIn;
+    const interest = cashGap > 0 ? totalInterest(cashGap, APR, TERM_MO) : 0;
+    const mxDep = mxDep5yr(currentValue, modelYear);
+    const extraDep = Math.max(0, mxDep - m3DepBaseline);
+    const total = cashGap + interest + INS_DELTA_5YR + extraDep;
+    return { cashGap, interest, insurance: INS_DELTA_5YR, extraDep, total };
+  }
+
+  function verdictColor(total) {
+    if (total < 10000) return '#16a34a';
+    if (total < 20000) return '#ca8a04';
+    return '#dc2626';
+  }
+  function verdictLabel(total) {
+    if (total < 10000) return 'Worth it';
+    if (total < 20000) return 'Borderline';
+    return 'Premium';
+  }
+
+  // Build all TCO records
+  const tcoRecords = [];
+  modelYears.forEach((my, i) => {
+    tcoRecords.push({ year: my, config: '6-seat', ...buildTCO(mx6Seat[i], my) });
+    tcoRecords.push({ year: my, config: '7-seat', ...buildTCO(mx7Seat[i], my) });
+  });
+
+  // Render TCO stacked bar chart
+  const tcoLabels = tcoRecords.map(r => `${r.year} ${r.config}`);
+
+  new Chart(document.getElementById('chartTCO'), {
+    type: 'bar',
+    data: {
+      labels: tcoLabels,
+      datasets: [
+        {
+          label: 'Cash gap',
+          data: tcoRecords.map(r => r.cashGap),
+          backgroundColor: '#3b82f6',
+        },
+        {
+          label: '5-yr loan interest',
+          data: tcoRecords.map(r => r.interest),
+          backgroundColor: '#8b5cf6',
+        },
+        {
+          label: '5-yr insurance delta',
+          data: tcoRecords.map(r => r.insurance),
+          backgroundColor: '#ec4899',
+        },
+        {
+          label: 'Extra depreciation vs M3',
+          data: tcoRecords.map(r => r.extraDep),
+          backgroundColor: '#f97316',
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { labels: { color: '#e4e4e7' } },
+        tooltip: {
+          callbacks: {
+            label: ctx => ` ${ctx.dataset.label}: $${ctx.parsed.y.toLocaleString()}`,
+            footer: items => {
+              const idx = items[0].dataIndex;
+              return `Total premium: $${tcoRecords[idx].total.toLocaleString()}`;
+            },
+          },
+        },
+        annotation: {},
+      },
+      scales: {
+        x: {
+          stacked: true,
+          ticks: { color: '#a1a1aa', maxRotation: 60, minRotation: 45 },
+          grid: { color: '#27272a' },
+        },
+        y: {
+          stacked: true,
+          ticks: { color: '#a1a1aa', callback: v => '$' + (v / 1000) + 'k' },
+          grid: { color: '#27272a' },
+          title: { display: true, text: '5-year switch premium ($)', color: '#71717a' },
+        },
+      },
+    },
+    plugins: [{
+      id: 'thresholdLine',
+      afterDraw(chart) {
+        const { ctx, chartArea, scales } = chart;
+        const y10k = scales.y.getPixelForValue(10000);
+        const y20k = scales.y.getPixelForValue(20000);
+        ctx.save();
+        // $10K line — wife's threshold
+        ctx.setLineDash([5, 5]);
+        ctx.strokeStyle = '#6ee7a3';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(chartArea.left, y10k);
+        ctx.lineTo(chartArea.right, y10k);
+        ctx.stroke();
+        ctx.fillStyle = '#6ee7a3';
+        ctx.font = 'bold 11px -apple-system';
+        ctx.fillText('$10K — wife\'s threshold', chartArea.left + 8, y10k - 4);
+        // $20K line
+        ctx.strokeStyle = '#fcd34d';
+        ctx.beginPath();
+        ctx.moveTo(chartArea.left, y20k);
+        ctx.lineTo(chartArea.right, y20k);
+        ctx.stroke();
+        ctx.fillStyle = '#fcd34d';
+        ctx.fillText('$20K', chartArea.left + 8, y20k - 4);
+        ctx.restore();
+      },
+    }],
+  });
+
+  // Render TCO table
+  const tcoTbody = document.getElementById('tcoTable');
+  tcoRecords.forEach(r => {
+    const color = verdictColor(r.total);
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${r.year}</td>
+      <td>${r.config}</td>
+      <td class="num">$${r.cashGap.toLocaleString()}</td>
+      <td class="num">$${r.interest.toLocaleString()}</td>
+      <td class="num">$${r.insurance.toLocaleString()}</td>
+      <td class="num">$${r.extraDep.toLocaleString()}</td>
+      <td class="num" style="color:${color};font-weight:600;">$${r.total.toLocaleString()}</td>
+      <td style="color:${color};font-weight:500;">${verdictLabel(r.total)}</td>
+    `;
+    tcoTbody.appendChild(tr);
+  });
+
+  // Verdict callout — find best option in each config
+  const best6 = tcoRecords.filter(r => r.config === '6-seat').sort((a, b) => a.total - b.total)[0];
+  const best7 = tcoRecords.filter(r => r.config === '7-seat').sort((a, b) => a.total - b.total)[0];
+  document.getElementById('verdictCallout').innerHTML = `
+    <strong>Lowest-premium picks under the wife's logic:</strong>
+    7-seat → <strong>${best7.year}</strong> at <strong>$${best7.total.toLocaleString()}</strong> over 5 years ·
+    6-seat → <strong>${best6.year}</strong> at <strong>$${best6.total.toLocaleString()}</strong>.
+    Anything 2022+ blows past the $20K mark — you're paying for newness, not utility.
+  `;
 
   function chartOpts({ xTitle, legendCols } = {}) {
     return {
